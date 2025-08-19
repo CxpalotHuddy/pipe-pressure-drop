@@ -7,6 +7,40 @@
   <meta name="description" content="Advanced engineering calculator for pipe flow: pressure drop, head loss, Reynolds number, friction factor (Colebrook–White), laminar/turbulent regime, and velocity. Supports SI and US units." />
   <meta name="keywords" content="Darcy-Weisbach, Colebrook, pipe flow, pressure drop, friction factor, Reynolds number, engineering calculator" />
   <style>
+    .container {
+  display: flex;
+  gap: 20px;      /* space between calculator and sidebar */
+}
+
+.calculator {
+  flex: 3;         /* takes 3 parts of the width */
+}
+
+.sidebar {
+  flex: 1;         /* takes 1 part of the width */
+  background: #f4f4f4;
+  padding: 10px;
+  border: 1px solid #ccc;
+}
+    header {
+  text-align: center;
+  padding: 20px;
+  background: #1e1e1e;
+  color: #ffffff;
+  border-bottom: 2px solid #444;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+header p {
+  margin: 5px 0 0;
+  font-size: 1.1rem;
+  color: #ccc;
+}
+
     :root{
       --bg:#0f1221;
       --panel:#151936;
@@ -119,6 +153,37 @@
       </div>
     </div>
   </header>
+<body>
+  <body>
+  <!-- HEADER -->
+  <header>
+    <h1>Engineering Tools Online</h1>
+    <p>Your go-to calculators for engineers & students</p>
+  </header>
+
+  <footer>
+  <p>&copy; 2025 Engineering Tools Online. All rights reserved.</p>
+  <p>This calculator is for educational purposes only.</p>
+</footer>
+<footer>
+  <p>&copy; 2025 Engineering Tools Online. All rights reserved.</p>
+  <p>This calculator is for educational purposes only.</p>
+</footer>
+<div class="container">
+  <main class="calculator">
+    <!-- your calculator code here -->
+  </main>
+  <aside class="sidebar">
+    <p>Ads / Affiliate links go here</p>
+  </aside>
+</div>
+    <!-- existing calculator code remains here -->
+  </main>
+    <footer>
+  <p>&copy; 2025 Engineering Tools Online. All rights reserved.</p>
+  <p>This calculator is for educational purposes only.</p>
+</footer>
+</body>
 
   <main class="wrap">
     <section class="panel">
