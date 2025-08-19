@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Darcy–Weisbach Pipe Pressure Drop Calculator</title>
+  <meta name="description" content="Advanced engineering calculator for pipe flow: pressure drop, head loss, Reynolds number, friction factor (Colebrook–White), laminar/turbulent regime, and velocity. Supports SI and US units." />
+  <meta name="keywords" content="Darcy-Weisbach, Colebrook, pipe flow, pressure drop, friction factor, Reynolds number, engineering calculator" />
+  <style>
+    :root{
+      --bg:#0f1221;
+      --panel:#151936;
+      --accent:#6ae3ff;
+      --text:#e8eaf6;
+      --muted:#b5b8d6;
+      --error:#ff6a6a;
+      --ok:#63ffa4;
+      --card:#1a1f45;
+      --input:#101432;
+      --border:rgba(255,255,255,0.08);
+      --shadow:0 10px 30px rgba(0,0,0,0.35);
+      --radius:14px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 600px at 80% -20%, #1e255f 10%, transparent 60%),
+                  radial-gradient(1000px 500px at -20% 120%, #20305f 10%, transparent 60%),
+                  var(--bg);
+      color:var(--text);
+      line-height:1.5;
+    }
+    header{
+      position:sticky; top:0; z-index:10;
+      backdrop-filter: blur(8px);
+      background: rgba(10,13,30,0.6);
+      border-bottom:1px solid var(--border);
+    }
+    .wrap{max-width:1080px; margin:0 auto; padding:20px}
+    .hero{display:flex; gap:24px; align-items:center; flex-wrap:wrap; padding:24px 0}
+    .logo{
+      width:64px; height:64px; border-radius:16px;
+      display:grid; place-items:center;
+      background: linear-gradient(135deg, #0ea5ea, #6ae3ff);
+      color:#0a1028; font-weight:800; font-size:28px;
+      box-shadow: var(--shadow);
+    }
+    h1{margin:0; font-size: clamp(26px, 3.5vw, 38px)}
+    .sub{color:var(--muted); max-width:760px}
+    .panel{
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      padding:20px;
+      box-shadow: var(--shadow);
+    }
+    .grid{display:grid; grid-template-columns: repeat(12, 1fr); gap:16px}
+    .span-6{grid-column: span 6}
+    .span-4{grid-column: span 4}
+    .span-8{grid-column: span 8}
+    .span-12{grid-column: span 12}
+    @media (max-width:900px){
+      .span-6,.span-4,.span-8,.span-12{grid-column: span 12}
+    }
+    label{
+      display:block;
+      font-size:14px;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+    input, select, button, textarea{
+      width:100%;
+      padding:12px 14px;
+      background: var(--input);
+      border:1px solid var(--border);
+      color:var(--text);
+      border-radius:12px;
+      outline:none;
+      font-size:16px;
+    }
+    input:focus, select:focus, textarea:focus{border-color: var(--accent); box-shadow:0 0 0 3px rgba(106,227,255,0.15)}
+    .row{display:grid; grid-template-columns: 1fr 1fr; gap:12px}
+    @media (max-width:640px){.row{grid-template-columns: 1fr}}
+    .btn{
+      cursor:pointer; font-weight:700; letter-spacing:.3px;
+      background: linear-gradient(135deg, #0ea5ea, #6ae3ff);
+      color:#0a1028; border:none;
+    }
+    .btn.secondary{background:transparent; border:1px solid var(--border); color:var(--text)}
+    .note{font-size:13px; color:var(--muted)}
+    .results{display:grid; grid-template-columns: repeat(3, 1fr); gap:12px}
+    @media (max-width:900px){.results{grid-template-columns: 1fr}}
+    .card{
+      background: var(--card);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:16px;
+    }
+    .kpi{font-size: clamp(18px, 2.8vw, 26px); font-weight:800}
+    .tag{display:inline-block; padding:4px 8px; border-radius:999px; font-size:12px; border:1px solid var(--border); color:var(--muted);}
+    footer{color:var(--muted); font-size:13px; padding:30px 0}
+    .two-col{display:grid; grid-template-columns: 1fr 1fr; gap:16px}
+    @media (max-width:900px){.two-col{grid-template-columns: 1fr}}
+    details{border:1px solid var(--border); border-radius:12px; padding:12px 14px; background: rgba(255,255,255,0.02)}
+    summary{cursor:pointer; font-weight:700}
+    code{background: rgba(255,255,255,0.05); padding:2px 6px; border-radius:6px}
+    .warn{color:var(--error)}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap hero">
+      <div class="logo">ΔP</div>
+      <div>
+        <h1>Darcy–Weisbach Pipe Pressure Drop Calculator</h1>
+        <div class="sub">Advanced calculator for incompressible flow. Computes pressure drop <em>ΔP</em>, head loss, velocity, Reynolds number, and Darcy friction factor using Colebrook–White (iterative) with smart fallbacks. SI &amp; US units.</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="panel">
+      <div class="grid">
+        <div class="span-8">
+          <div class="row">
+            <div>
+              <label for="unitSystem">Unit system</label>
+              <select id="unitSystem">
+                <option value="si">SI (m, Pa·s, kg/m³)</option>
+                <option value="us">US (ft, cP, lb/ft³, gpm)</option>
+              </select>
+            </div>
+            <div>
+              <label for="preset">Fluid preset</label>
+              <select id="preset">
+                <option value="custom">Custom</option>
+                <option value="water">Water ~20°C (ρ≈998 kg/m³, μ≈0.001 Pa·s)</option>
+                <option value="air">Air ~20°C (ρ≈1.204 kg/m³, μ≈1.81e-5 Pa·s)</option>
+                <option value="oil">Light Oil (ρ≈850 kg/m³, μ≈0.05 Pa·s)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="two-col" style="margin-top:10px">
+            <div>
+              <label for="length">Pipe length L</label>
+              <input id="length" type="number" step="any" value="50" />
+              <div class="note" id="lengthUnitNote">meters (m)</div>
+            </div>
+            <div>
+              <label for="diameter">Pipe diameter D</label>
+              <input id="diameter" type="number" step="any" value="0.05" />
+              <div class="note" id="diameterUnitNote">meters (m)</div>
+            </div>
+          </div>
+
+          <div class="two-col">
+            <div>
+              <label for="flowrate">Volumetric flow rate Q</label>
+              <input id="flowrate" type="number" step="any" value="0.002" />
+              <div class="note" id="flowrateUnitNote">m³/s (tip: 1 L/s = 0.001 m³/s)</div>
+            </div>
+            <div>
+              <label for="roughness">Absolute roughness ε</label>
+              <input id="roughness" type="number" step="any" value="0.00015" />
+              <div class="note" id="roughnessUnitNote">meters (m). Try presets below.</div>
+            </div>
+          </div>
+
+          <div class="two-col">
+            <div>
+              <label for="density">Fluid density ρ</label>
+              <input id="density" type="number" step="any" value="998" />
+              <div class="note" id="densityUnitNote">kg/m³</div>
+            </div>
+            <div>
+              <label for="viscosity">Dynamic viscosity μ</label>
+              <input id="viscosity" type="number" step="any" value="0.001" />
+              <div class="note" id="viscosityUnitNote">Pa·s (1 cP = 0.001 Pa·s)</div>
+            </div>
+          </div>
+
+          <div class="two-col">
+            <div>
+              <label for="minorK">Minor losses ΣK (optional)</label>
+              <input id="minorK" type="number" step="any" value="0" />
+              <div class="note">Sum of local loss coefficients (bends, valves, entrances, etc.)</div>
+            </div>
+            <div>
+              <label for="materialPreset">Pipe material roughness preset</label>
+              <select id="materialPreset">
+                <option value="custom">Custom (use ε above)</option>
+                <option value="PVC">PVC (ε≈0.0015 mm)</option>
+                <option value="steel">New steel (ε≈0.045 mm)</option>
+                <option value="cast">Cast iron (ε≈0.26 mm)</option>
+                <option value="concrete">Concrete (ε≈0.3 mm)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:14px">
+            <button class="btn" id="calcBtn">Calculate</button>
+            <button class="btn secondary" id="resetBtn">Reset</button>
+          </div>
+          <div class="note" style="margin-top:10px">This tool assumes steady, incompressible flow. For gases at high Mach or big ΔP relative to absolute pressure, compressibility matters.</div>
+        </div>
+
+        <div class="span-4">
+          <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
+              <strong>Output</strong>
+              <span class="tag" id="regimeTag">Regime: —</span>
+            </div>
+            <div class="results">
+              <div class="card">
+                <div class="note">Pressure drop ΔP</div>
+                <div class="kpi" id="dp">—</div>
+                <div class="note" id="dpAlt">—</div>
+              </div>
+              <div class="card">
+                <div class="note">Head loss h<sub>f</sub></div>
+                <div class="kpi" id="hf">—</div>
+                <div class="note">meters of fluid</div>
+              </div>
+              <div class="card">
+                <div class="note">Friction factor f (Darcy)</div>
+                <div class="kpi" id="ff">—</div>
+                <div class="note" id="re">Re: —</div>
+              </div>
+            </div>
+            <div class="card" style="margin-top:12px">
+              <div class="note">Velocity v</div>
+              <div class="kpi" id="vel">—</div>
+              <div class="note">Also: <span id="velAlt">—</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="margin-top:18px" class="panel">
+      <h2 style="margin-top:0">How it works (engineer's notes)</h2>
+      <div class="two-col">
+        <div>
+          <p>
+            The calculator uses the Darcy–Weisbach equation: 
+            <br><code>ΔP = ( f · L/D + ΣK ) · ρ · v² / 2</code>, where 
+            <code>v = Q / (π D² / 4)</code>, <code>Re = ρ v D / μ</code>.
+          </p>
+          <p>
+            For laminar flow (<code>Re &lt; 2300</code>), <code>f = 64 / Re</code>. 
+            For transitional/turbulent, we solve Colebrook–White iteratively:
+            <br><code>1/√f = -2 log10( (ε/D)/3.7 + 2.51/(Re √f) )</code>
+          </p>
+          <p>
+            Initial guess uses Swamee–Jain; robust fallback uses the Churchill correlation for all <code>Re</code> and relative roughness.
+          </p>
+        </div>
+        <div>
+          <details>
+            <summary>Typical absolute roughness ε presets</summary>
+            <ul>
+              <li>PVC: 0.0015 mm (1.5e-6 m)</li>
+              <li>New steel: 0.045 mm (4.5e-5 m)</li>
+              <li>Cast iron: 0.26 mm (2.6e-4 m)</li>
+              <li>Concrete: 0.3 mm (3e-4 m)</li>
+            </ul>
+          </details>
+          <details>
+            <summary>Assumptions &amp; caveats</summary>
+            <ul>
+              <li>Steady, incompressible, single-phase flow in full circular pipe</li>
+              <li>Minor losses via ΣK lumped parameter</li>
+              <li>Fluid properties assumed constant (isothermal)</li>
+              <li>For gases with high compressibility effects, specialized models are recommended</li>
+            </ul>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap">
+    <div class="two-col">
+      <div>
+        Built by <strong>Huddy's Micro‑Niche Lab</strong>. Host this as a single <code>index.html</code> file on Netlify, Vercel, GitHub Pages, or any static host.
+      </div>
+      <div style="text-align:right">
+        <span class="tag">v1.0</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const g = 9.80665;
+
+    const els = {
+      unit: document.getElementById('unitSystem'),
+      preset: document.getElementById('preset'),
+      length: document.getElementById('length'),
+      diameter: document.getElementById('diameter'),
+      flowrate: document.getElementById('flowrate'),
+      roughness: document.getElementById('roughness'),
+      density: document.getElementById('density'),
+      viscosity: document.getElementById('viscosity'),
+      minorK: document.getElementById('minorK'),
+      materialPreset: document.getElementById('materialPreset'),
+      lengthNote: document.getElementById('lengthUnitNote'),
+      diameterNote: document.getElementById('diameterUnitNote'),
+      flowrateNote: document.getElementById('flowrateUnitNote'),
+      roughnessNote: document.getElementById('roughnessUnitNote'),
+      densityNote: document.getElementById('densityUnitNote'),
+      viscosityNote: document.getElementById('viscosityUnitNote'),
+      calcBtn: document.getElementById('calcBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+      dp: document.getElementById('dp'),
+      dpAlt: document.getElementById('dpAlt'),
+      hf: document.getElementById('hf'),
+      ff: document.getElementById('ff'),
+      re: document.getElementById('re'),
+      vel: document.getElementById('vel'),
+      velAlt: document.getElementById('velAlt'),
+      regimeTag: document.getElementById('regimeTag')
+    };
+
+    function setMaterialPreset(){
+      const p = els.materialPreset.value;
+      const map = {
+        'PVC': 0.0015e-3,
+        'steel': 0.045e-3,
+        'cast': 0.26e-3,
+        'concrete': 0.3e-3
+      };
+      if(map[p]){
+        if(els.unit.value === 'si'){
+          els.roughness.value = map[p];
+        } else {
+          // convert meters to feet
+          els.roughness.value = map[p] * 3.280839895;
+        }
+      }
+    }
+
+    function setFluidPreset(){
+      const p = els.preset.value;
+      if(p==='water'){
+        if(els.unit.value === 'si'){
+          els.density.value = 998; els.viscosity.value = 0.001;
+        } else {
+          // 998 kg/m3 -> lb/ft3 ; 0.001 Pa·s -> cP
+          els.density.value = (998 * 0.06242796).toFixed(2);
+          els.viscosity.value = 1.0; // cP
+        }
+      } else if(p==='air'){
+        if(els.unit.value === 'si'){
+          els.density.value = 1.204; els.viscosity.value = 1.81e-5;
+        } else {
+          els.density.value = (1.204 * 0.06242796).toFixed(4);
+          els.viscosity.value = 0.0181; // cP
+        }
+      } else if(p==='oil'){
+        if(els.unit.value === 'si'){
+          els.density.value = 850; els.viscosity.value = 0.05;
+        } else {
+          els.density.value = (850 * 0.06242796).toFixed(2);
+          els.viscosity.value = 50; // cP
+        }
+      }
+    }
+
+    function updateUnitNotes(){
+      if(els.unit.value === 'si'){
+        els.lengthNote.textContent = 'meters (m)';
+        els.diameterNote.textContent = 'meters (m)';
+        els.flowrateNote.textContent = 'm³/s (tip: 1 L/s = 0.001 m³/s)';
+        els.roughnessNote.textContent = 'meters (m)';
+        els.densityNote.textContent = 'kg/m³';
+        els.viscosityNote.textContent = 'Pa·s (1 cP = 0.001 Pa·s)';
+        // convert existing US entries to SI for display values
+        convertInputsTo('si');
+      } else {
+        els.lengthNote.textContent = 'feet (ft)';
+        els.diameterNote.textContent = 'feet (ft)';
+        els.flowrateNote.textContent = 'gallons per minute (gpm)';
+        els.roughnessNote.textContent = 'feet (ft)';
+        els.densityNote.textContent = 'lb/ft³';
+        els.viscosityNote.textContent = 'centipoise (cP)';
+        convertInputsTo('us');
+      }
+      setFluidPreset();
+      setMaterialPreset();
+    }
+
+    function convertInputsTo(system){
+      // Get current numeric values as SI first (assume els store their current unit; we need safe conversions).
+      // We'll convert by reading, assuming current labels correspond to the previous system.
+      // For simplicity, we'll convert numerically using standard factors, but avoid double converting by tracking a flag.
+      // A more robust approach would store "canonical SI" hidden state. We'll do that here:
+    }
+
+    // We'll hold canonical state in SI units and reflect into UI on change.
+    const stateSI = {
+      L: 50, D: 0.05, Q: 0.002, eps: 0.00015, rho: 998, mu: 0.001, K: 0
+    };
+
+    function reflectStateToUI(){
+      if(els.unit.value === 'si'){
+        els.length.value = stateSI.L;
+        els.diameter.value = stateSI.D;
+        els.flowrate.value = stateSI.Q;
+        els.roughness.value = stateSI.eps;
+        els.density.value = stateSI.rho;
+        els.viscosity.value = stateSI.mu;
+      } else {
+        // SI -> US
+        els.length.value = (stateSI.L * 3.280839895).toFixed(4);
+        els.diameter.value = (stateSI.D * 3.280839895).toFixed(5);
+        // m^3/s -> gpm (US gal = 0.003785411784 m^3)
+        els.flowrate.value = (stateSI.Q / 0.0000630901964).toFixed(3);
+        els.roughness.value = (stateSI.eps * 3.280839895).toExponential(4);
+        // kg/m3 -> lb/ft3
+        els.density.value = (stateSI.rho * 0.06242796).toFixed(3);
+        // Pa·s -> cP
+        els.viscosity.value = (stateSI.mu * 1000).toFixed(3);
+      }
+      els.minorK.value = stateSI.K;
+    }
+
+    function readUIToStateSI(){
+      const sys = els.unit.value;
+      function n(id){ return parseFloat(id.value) }
+      if(sys === 'si'){
+        stateSI.L = n(els.length);
+        stateSI.D = n(els.diameter);
+        stateSI.Q = n(els.flowrate);
+        stateSI.eps = n(els.roughness);
+        stateSI.rho = n(els.density);
+        stateSI.mu = n(els.viscosity);
+      } else {
+        // US -> SI
+        stateSI.L = n(els.length) / 3.280839895;
+        stateSI.D = n(els.diameter) / 3.280839895;
+        stateSI.Q = n(els.flowrate) * 0.0000630901964;
+        stateSI.eps = n(els.roughness) / 3.280839895;
+        stateSI.rho = n(els.density) / 0.06242796;
+        stateSI.mu = n(els.viscosity) / 1000;
+      }
+      stateSI.K = isNaN(n(els.minorK)) ? 0 : n(els.minorK);
+    }
+
+    function regimeFromRe(Re){
+      if(Re < 2300) return 'Laminar';
+      if(Re < 4000) return 'Transitional';
+      return 'Turbulent';
+    }
+
+    function frictionFactorColebrook(Re, relRough){
+      if(Re < 2300){
+        return 64 / Re;
+      }
+      // Swamee-Jain explicit as starting guess (valid for turbulent Re>5e3 approx)
+      const sj = 0.25 / Math.pow(Math.log10(relRough/3.7 + 5.74/Math.pow(Re,0.9)), 2);
+      let f = (isFinite(sj) && sj>0) ? sj : 0.02;
+      // Fixed-point iteration on Colebrook
+      for(let i=0;i<30;i++){
+        const rhs = -2.0 * Math.log10( (relRough/3.7) + (2.51/(Re*Math.sqrt(f))) );
+        const fnew = 1.0 / (rhs*rhs);
+        if(Math.abs(fnew - f) < 1e-8) { f = fnew; break; }
+        f = fnew;
+      }
+      if(!isFinite(f) || f<=0){
+        // Churchill fallback (valid all Re)
+        const A = Math.pow(2.457*Math.log(1/Math.pow( (7/Re) ,0.9) + 0.27*relRough), 16);
+        const B = Math.pow(37530/Re, 16);
+        f = 8*Math.pow(Math.pow(8/Re,12) + 1/Math.pow(A+B,1.5), 1/12);
+      }
+      return f;
+    }
+
+    function compute(){
+      readUIToStateSI();
+      const L = stateSI.L, D = stateSI.D, Q = stateSI.Q, eps = stateSI.eps, rho = stateSI.rho, mu = stateSI.mu, K = stateSI.K||0;
+      // Basic validation
+      const errs = [];
+      if(!(L>0)) errs.push('Length must be > 0');
+      if(!(D>0)) errs.push('Diameter must be > 0');
+      if(!(Q>0)) errs.push('Flow rate must be > 0');
+      if(!(rho>0)) errs.push('Density must be > 0');
+      if(!(mu>0)) errs.push('Viscosity must be > 0');
+      if(eps<0) errs.push('Roughness cannot be negative');
+      if(errs.length){
+        els.dp.textContent = '—';
+        els.dpAlt.textContent = errs.join('; ');
+        els.hf.textContent = '—';
+        els.ff.textContent = '—';
+        els.re.textContent = '—';
+        els.vel.textContent = '—';
+        els.velAlt.textContent = '—';
+        els.regimeTag.textContent = 'Regime: —';
+        els.regimeTag.style.color = 'var(--muted)';
+        return;
+      }
+
+      const area = Math.PI * D*D / 4;
+      const v = Q / area;
+      const Re = rho * v * D / mu;
+      const relR = eps / D;
+      const f = frictionFactorColebrook(Re, relR);
+      const hf = (f * (L/D) + K) * (v*v) / (2*g); // meters of fluid
+      const dP = (f * (L/D) + K) * rho * v*v / 2; // Pascals
+
+      const regime = regimeFromRe(Re);
+      els.regimeTag.textContent = `Regime: ${regime}`;
+      els.regimeTag.style.color = (regime==='Laminar') ? 'var(--ok)' : (regime==='Transitional' ? '#ffd166' : 'var(--accent)');
+
+      // Output
+      els.hf.textContent = `${hf.toFixed(4)} m`;
+      els.ff.textContent = f.toFixed(6);
+      els.re.textContent = `Re: ${Re.toFixed(0)} (${regime})`;
+      // Velocity
+      els.vel.textContent = `${v.toFixed(3)} m/s`;
+      els.velAlt.textContent = `${(v*3.28084).toFixed(3)} ft/s`;
+      // Pressure drop
+      els.dp.textContent = `${(dP/1000).toFixed(3)} kPa`;
+      // Alt in Pa and psi
+      const psi = dP * 0.000145037738;
+      els.dpAlt.textContent = `${dP.toFixed(1)} Pa  •  ${psi.toFixed(3)} psi`;
+    }
+
+    function resetAll(){
+      stateSI.L = 50; stateSI.D = 0.05; stateSI.Q = 0.002; stateSI.eps = 0.00015;
+      stateSI.rho = 998; stateSI.mu = 0.001; stateSI.K = 0;
+      els.unit.value = 'si'; els.preset.value = 'water'; els.materialPreset.value = 'custom';
+      updateUnitNotes(); reflectStateToUI(); compute();
+    }
+
+    // Events
+    els.unit.addEventListener('change', ()=>{ updateUnitNotes(); reflectStateToUI(); });
+    els.preset.addEventListener('change', ()=>{ setFluidPreset(); compute(); });
+    els.materialPreset.addEventListener('change', ()=>{ setMaterialPreset(); compute(); });
+    ['length','diameter','flowrate','roughness','density','viscosity','minorK'].forEach(id=>{
+      els[id].addEventListener('input', ()=>{ compute(); });
+    });
+    els.calcBtn.addEventListener('click', compute);
+    els.resetBtn.addEventListener('click', resetAll);
+
+    // Initialize
+    updateUnitNotes();
+    reflectStateToUI();
+    setFluidPreset();
+    compute();
+  </script>
+</body>
+</html>
